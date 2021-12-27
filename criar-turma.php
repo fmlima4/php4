@@ -11,6 +11,7 @@ $studentRepository = new PdoStudentRepository($connection);
 
 $connection->beginTransaction();
 
+try {
 $aStudent = new Student(null, 'Felipe', new \DateTimeImmutable('1997-10-15'));
 $studentRepository->save($aStudent);
 
@@ -19,7 +20,10 @@ $studentRepository->save($anotherStudent);
 
 $connection->commit();
 
-//$connection->rollBack();
+} catch (\RuntimeException $e) {
+    echo $e->getMessage();
+    $connection->rollBack();
+}
 
 
 
