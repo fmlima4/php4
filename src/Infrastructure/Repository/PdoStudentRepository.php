@@ -3,6 +3,7 @@
 namespace php4\Pdo\Infrastructure\Repository;
 
 use php4\Pdo\Domain\Model\Student;
+use php4\Pdo\Domain\Model\Phone;
 use php4\Pdo\Domain\Repository\StudentRepository;
 use PDO;
 
@@ -39,14 +40,38 @@ class PdoStudentRepository implements StudentRepository
         $studentList = [];
 
         foreach ($studentDataList as $studentData) {
-            $studentList[] = new Student(
+            $student = new Student(
                 $studentData['id'],
                 $studentData['name'],
                 new \DateTimeImmutable($studentData['birth_date'])
             );
+
+            $this->fillPhonesOf($student);
+
+            $studentList[] =  $student;
         }
 
         return $studentList;
+    }
+
+    private function fillPhonesOf(Student $student)
+    {
+        $sqlQuery = 'SELECT id, area_code, number FROM phones number WHERE student_id = :student_id';
+        $stmt = $this->connection->prepare($sqlQuery);
+        $stmt->bindValue(':student_id', $student->id(), PDO::PARAM_INT);
+        $stmt->execute();
+
+        $phoneDataList = $stmt->fetchAll();
+
+        foreach ($phoneDataList as $phoneData) {
+            $phone = new Phone (
+                $phoneData['id'],
+                $phoneData['area_code'],
+                $phoneData['number']
+            );
+            
+            $student->addPhone($phone);
+        }
     }
 
     public function save(Student $student): bool
@@ -60,9 +85,8 @@ class PdoStudentRepository implements StudentRepository
 
     private function insert(Student $student): bool
     {
-        $insertQuery = 'INSERT INTO studenta (name, birth_date) VALUES (:name, :birth_date);';
+        $insertQuery = 'INSERT INTO students (name, birth_date) VALUES (:name, :birth_date);';
         $stmt = $this->connection->prepare($insertQuery);
-        if($stmt === false) {throw new \RuntimeException($this->connection->errorInfo()[2]);}
 
         $success = $stmt->execute([
             ':name' => $student->name(),

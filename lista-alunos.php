@@ -1,21 +1,14 @@
 <?php
 
 use php4\Pdo\Domain\Model\Student;
+use php4\Pdo\Infrastructure\Repository\PdoStudentRepository;
 
 require_once 'vendor/autoload.php';
 
 $pdo =  \php4\Pdo\Config\Database::createConnection();
 
-$statement = $pdo->query('SELECT * FROM students;');
-$studentDataList = $statement->fetchAll(PDO::FETCH_ASSOC);
-$studentList = [];
+$repository = new PdoStudentRepository($pdo);
 
-foreach ($studentDataList as $studentData) {
-    $studentList[] = new Student(
-        $studentData['id'],
-        $studentData['name'],
-        new \DateTimeImmutable($studentData['birth_date'])
-    );
-}
+$studentList = $repository->allStudents();
 
 var_dump($studentList);
