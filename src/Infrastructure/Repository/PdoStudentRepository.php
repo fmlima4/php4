@@ -118,4 +118,32 @@ class PdoStudentRepository implements StudentRepository
 
         return $stmt->execute();
     }
+
+    public function studentsWithPhones(): array
+    {
+        $sqlQuery = 'SELECT students.id,students.name, students.birth_date, 
+                        phones.id as phone_id, phones.area_code, phones.number 
+                        FROM students JOIN phones ON phones.student_id = students.id;';
+        
+        $stmt = $this->connection->query($sqlQuery);
+        $result = $stmt->fetchAll();
+        $studentList = [];
+
+        foreach ($result as $row){
+            if(!array_key_exists($row['id'], $studentList)){
+                $studentList[$row['id']] = new Student(
+                    $row['id'],
+                    $row['name'],
+                    new \DateTimeImmutable($row['birth_date'])
+                );
+            } 
+
+            $phone = new Phone($row['phone_id'],  $row['area_code'], $row['number']);
+            $studentList[$row['id']]->addPhone($phone);
+            
+        }      
+        
+        return $studentList;
+        
+    }
 }
